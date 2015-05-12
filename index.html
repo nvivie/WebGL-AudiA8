@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>A8 in Environment</title>
+  <meta charset="utf-8">
+  <script src="js/three.min.js"></script>
+  <script src="js/OrbitControls.js"></script>
+</head>
+
+<body style="margin: 0;">
+
+  <script>
+
+    // Set up the scene, camera, and renderer as global variables.
+    var scene, camera, renderer, mesh;
+    var texture_placeholder, target = new THREE.Vector3();
+
+    init();
+    animate();
+
+
+    function init() {
+      // Create the scene and set the scene size.
+      scene = new THREE.Scene();
+
+      var WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
+
+      // Create a renderer and add it to the DOM.
+      renderer = new THREE.WebGLRenderer({antialias:true});
+      renderer.setSize(WIDTH, HEIGHT);
+      document.body.appendChild(renderer.domElement);
+
+      // Create a camera, zoom it out from the model a bit, and add it to the scene.
+      camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 20000);
+      camera.position.set(0,10,50);
+
+      scene.add(camera);
+
+      // Create an event listener that resizes the renderer with the browser window.
+      window.addEventListener('resize', function() {
+        var WIDTH = window.innerWidth,
+            HEIGHT = window.innerHeight;
+        renderer.setSize(WIDTH, HEIGHT);
+        camera.aspect = WIDTH / HEIGHT;
+        camera.updateProjectionMatrix();
+      });
+
+      // set up texture_placeholder
+      var texture_placeholder,
+      texture_placeholder = document.createElement( 'canvas' );
+      texture_placeholder.width = 128;
+      texture_placeholder.height = 128;
+
+      var content = texture_placeholder.getContext('2d');
+      content.fillStyle = 'rgb(200,200,200)';
+      content.fillRect(0,0,128,128);
+
+
+        //urls of the images   
+        var urls = [ loadTexture("img/posx.jpg"), 
+                     loadTexture("img/negx.jpg"),
+                     loadTexture("img/posy.jpg"), 
+                     loadTexture("img/negy.jpg"),
+                     loadTexture("img/posz.jpg"), 
+                     loadTexture("img/negz.jpg")];
+
+
+      // create the cub by itself
+      skyboxMesh = new THREE.Mesh( new THREE.BoxGeometry( 100, 100, 100, 20, 20, 20 ), new THREE.MeshFaceMaterial( urls ) );
+
+      //IMPORTANT!! draw on the inside instead of outside 
+      skyboxMesh.flipSide = true;
+      skyboxMesh.scale.x = -1.2;
+
+      scene.add(skyboxMesh);
+
+      // Create a light, set its position, and add it to the scene.
+      var light = new THREE.PointLight(0xffffff);
+      light.position.set(-100,200,100);
+      scene.add(light);
+
+
+      // Load in the mesh and add it to the scene.
+      var loader = new THREE.JSONLoader();
+      loader.load( "js/A8phong.js", function(geometry, materials ){
+        /* Export blender file as a phong and load it with MeshFaceMaterial */
+        mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials) );
+
+        mesh.position.x = 20;
+        mesh.position.y = -10;
+
+        // position that needs to be animated
+        mesh.position.z = -20;
+
+        scene.add(mesh);
+      });
+      
+
+      // Add OrbitControls so that we can pan around with the mouse.
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.minDistance = 0;
+      controls.maxDistance = 1;
+    }
+
+
+    // function to load skybox texture
+    function loadTexture(path){
+      var texture = new THREE.Texture(texture_placeholder);
+      var material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.Backside,
+        overdraw: true
+      });
+
+      var image = new Image();
+      image.onload = function(){
+        texture.image = this;
+        texture.needsUpdate = true;
+      };
+      image.src = path;
+      return material;
+    }
+
+
+    // Renders the scene and updates the render as needed.
+    function animate() {
+      // creates a loop
+      requestAnimationFrame(animate);   
+      // Render the scene.
+      renderer.render(scene, camera);
+      controls.update();
+    }
+  
+  </script>
+
+</body>
+</html>
